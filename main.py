@@ -1,5 +1,6 @@
-import pygame
 import sys
+import pygame
+import pygame_menu
 from random import randint
 
 FRAME_COLOR = (0, 255, 204)
@@ -10,15 +11,19 @@ HEADER_COLOR = (0, 204, 153)
 SNAKE_COLOR = (0, 102, 0)
 
 SIZE_BLOCK = 20
-COUNT_BLOCKS = 30
+COUNT_BLOCKS = 20
 MARGIN = 1
 HEADER_MARGIN = 70
+FONT_SIZE = 35
 
 SIZE = [
     SIZE_BLOCK * COUNT_BLOCKS + 2 * SIZE_BLOCK + MARGIN * COUNT_BLOCKS,
     SIZE_BLOCK * COUNT_BLOCKS + 2 * SIZE_BLOCK + MARGIN * COUNT_BLOCKS +
     HEADER_MARGIN
 ]
+
+screen = pygame.display.set_mode(SIZE)
+pygame.display.set_caption('Snake game')
 
 
 class SnakeBlock:
@@ -35,18 +40,7 @@ class SnakeBlock:
             other, SnakeBlock) and self.x == other.x and self.y == other.y
 
 
-def get_random_empty_block():
-    x = randint(0, COUNT_BLOCKS - 1)
-    y = randint(0, COUNT_BLOCKS - 1)
-    empty_block = SnakeBlock(x, y)
-    while empty_block in snake_blocks:
-        empty_block.x = randint(0, COUNT_BLOCKS - 1)
-        empty_block.y = randint(0, COUNT_BLOCKS - 1)
-
-    return empty_block
-
-
-def draw_block(screen, color, row, col):
+def draw_block(color, row, col):
     pygame.draw.rect(screen, color, [
         SIZE_BLOCK + col * SIZE_BLOCK + MARGIN *
         (col + 1), HEADER_MARGIN + SIZE_BLOCK + row * SIZE_BLOCK + MARGIN *
@@ -54,13 +48,20 @@ def draw_block(screen, color, row, col):
     ])
 
 
-if __name__ == '__main__':
-    pygame.init()
+def start_the_game():
 
-    screen = pygame.display.set_mode(SIZE)
-    pygame.display.set_caption('Snake game')
+    def get_random_empty_block():
+        x = randint(0, COUNT_BLOCKS - 1)
+        y = randint(0, COUNT_BLOCKS - 1)
+        empty_block = SnakeBlock(x, y)
+        while empty_block in snake_blocks:
+            empty_block.x = randint(0, COUNT_BLOCKS - 1)
+            empty_block.y = randint(0, COUNT_BLOCKS - 1)
+
+        return empty_block
+
     timer = pygame.time.Clock()
-    courier_font = pygame.font.SysFont('Courier', 70)
+    courier_font = pygame.font.SysFont('Courier', FONT_SIZE)
 
     middle_of_field = COUNT_BLOCKS // 2
     snake_blocks = [
@@ -70,30 +71,29 @@ if __name__ == '__main__':
     ]
 
     apple = get_random_empty_block()
-    d_row = 0
-    d_col = 1
+    pos_row = 0
+    pos_col = -1
     total_score = 0
     snake_speed = 1
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                print('Exit')
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP and d_col != 0:
-                    d_row = -1
-                    d_col = 0
-                elif event.key == pygame.K_DOWN and d_col != 0:
-                    d_row = 1
-                    d_col = 0
-                elif event.key == pygame.K_LEFT and d_row != 0:
-                    d_row = 0
-                    d_col = -1
-                elif event.key == pygame.K_RIGHT and d_row != 0:
-                    d_row = 0
-                    d_col = 1
+                if event.key == pygame.K_UP and pos_col != 0:
+                    pos_row = -1
+                    pos_col = 0
+                elif event.key == pygame.K_DOWN and pos_col != 0:
+                    pos_row = 1
+                    pos_col = 0
+                elif event.key == pygame.K_LEFT and pos_row != 0:
+                    pos_row = 0
+                    pos_col = -1
+                elif event.key == pygame.K_RIGHT and pos_row != 0:
+                    pos_row = 0
+                    pos_col = 1
 
         screen.fill(FRAME_COLOR)
         pygame.draw.rect(screen, HEADER_COLOR, [0, 0, SIZE[0], HEADER_MARGIN])
@@ -113,18 +113,18 @@ if __name__ == '__main__':
                 else:
                     color = WHITE
 
-                draw_block(screen, color, row, col)
+                draw_block(color, row, col)
 
         head = snake_blocks[0]
         if not head.is_inside():
-            print('Game over')
-            pygame.quit()
-            sys.exit()
+            break
 
-        draw_block(screen, RED, apple.x, apple.y)
+        draw_block(RED, apple.x, apple.y)
 
         for block in snake_blocks:
-            draw_block(screen, SNAKE_COLOR, block.x, block.y)
+            draw_block(SNAKE_COLOR, block.x, block.y)
+
+        pygame.display.flip()
 
         if apple == head:
             total_score += 1
@@ -132,10 +132,26 @@ if __name__ == '__main__':
             snake_blocks.append(apple)
             apple = get_random_empty_block()
 
-        new_head = SnakeBlock(head.x + d_row, head.y + d_col)
+        new_head = SnakeBlock(head.x + pos_row, head.y + pos_col)
+        if new_head in snake_blocks:
+            break
 
         snake_blocks.insert(0, new_head)
         snake_blocks.pop()
 
-        pygame.display.flip()
         timer.tick(3 + snake_speed)
+
+
+if __name__ == '__main__':
+    pygame.init()
+
+    menu = pygame_menu.Menu('Welcome',
+                            SIZE[0],
+                            SIZE[1],
+                            theme=pygame_menu.themes.THEME_BLUE)
+
+    menu.add.text_input('Name :', default='Player1')
+    menu.add.button('Play', start_the_game)
+    menu.add.button('Quit', pygame_menu.events.EXIT)
+
+    menu.mainloop(screen)
