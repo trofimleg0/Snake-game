@@ -15,6 +15,7 @@ COUNT_BLOCKS = 20
 MARGIN = 1
 HEADER_MARGIN = 70
 FONT_SIZE = 35
+START_SPEED = 6
 
 SIZE = [
     SIZE_BLOCK * COUNT_BLOCKS + 2 * SIZE_BLOCK + MARGIN * COUNT_BLOCKS,
@@ -139,7 +140,7 @@ def start_the_game():
         snake_blocks.insert(0, new_head)
         snake_blocks.pop()
 
-        timer.tick(3 + snake_speed)
+        timer.tick(START_SPEED + snake_speed)
 
 
 if __name__ == '__main__':
